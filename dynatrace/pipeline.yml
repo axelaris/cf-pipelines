@@ -1,0 +1,55 @@
+---
+resources:
+- name: dynatrace-service-broker
+  type: git
+  source:
+    uri: https://github.com/Dynatrace/dynatrace-service-broker.git
+    branch: master
+
+- name: cf
+  type: cf
+  source:
+    api: ((cf_api))
+    username: ((cf_user))
+    password: ((cf_password))
+    organization: ((cf_org))
+    space: ((cf_space))
+    skip_cert_check: ((cf_skip_cert_check))
+
+- name: bbl-state
+  type: git
+  source:
+    uri: ((bbl_state_repo))
+    branch: master
+    private_key: ((git_private_key))
+
+jobs:
+- name: build
+  plan:
+  - get: dynatrace-service-broker
+  - get: bbl-state
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: maven
+          tag: 3.6
+      inputs:
+      - name: dynatrace-service-broker
+      - name: bbl-state
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          cp bbl-state/vars/dynatrace/manifest.yml dynatrace-service-broker/
+          cd dynatrace-service-broker
+          mvn -Dmaven.test.skip=true clean install
+      outputs:
+      - name: dynatrace-service-broker
+  - put: cf
+    params:
+      manifest: dynatrace-service-broker/manifest.yml
+
