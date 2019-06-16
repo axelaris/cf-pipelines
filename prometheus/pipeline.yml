@@ -1,0 +1,101 @@
+---
+resource_types:
+- name: concourse-version-resource
+  type: docker-image
+  source:
+    repository: meteogroup/concourse-version-resource
+
+- name: bosh-deployment
+  type: docker-image
+  source:
+    repository: cloudfoundry/bosh-deployment-resource
+
+resources:
+- name: prometheus-boshrelease
+  type: git
+  source:
+    uri: https://github.com/bosh-prometheus/prometheus-boshrelease
+    branch: master
+    tag_filer: v25.0.0
+
+- name: bbl-state
+  type: git
+  source:
+    uri: ((bbl_state_repo))
+    branch: master
+    private_key: ((git_private_key))
+
+- name: version
+  type: concourse-version-resource
+
+jobs:
+- name: populate-credhub
+  public: true
+  serial: true
+  plan:
+  - get: version
+  - get: bbl-state
+  - task: populate-credhub
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v6.14.0
+      inputs:
+      - name: bbl-state
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          pushd bbl-state/bbl-state
+          set +x
+          eval "$(bbl print-env)"
+          popd
+          ENV_ID=$(cat bbl-state/bbl-state/vars/bbl.tfvars | grep env_id | sed s/^env_id=// | sed s/\"//g)
+          CFPSW=$(credhub get -n /bosh-$ENV_ID/cf/cf_admin_password | grep ^value | awk '{print $2}')
+          credhub set -n /bosh-$ENV_ID/prometheus/cf_admin_password -t value -v $CFPSW
+          set -x
+  - put: version
+
+- name: deploy
+  public: true
+  serial: true
+  plan:
+  - get: version
+    passed: [populate-credhub]
+    trigger: true
+  - get: prometheus-boshrelease
+  - get: bbl-state
+  - task: deploy
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v6.14.0
+      inputs:
+      - name: bbl-state
+      - name: prometheus-boshrelease
+      params:
+        OPS_FILES: ((ops_files))
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          pushd bbl-state/bbl-state
+          set +x
+          eval "$(bbl print-env)"
+          set -x
+          popd
+          arguments="-l bbl-state/vars/prometheus/vars.yml"
+          for op in ${OPS_FILES}
+          do
+            arguments="${arguments} -o prometheus-boshrelease/manifests/operators/${op}"
+          done
+          bosh -n -d prometheus deploy prometheus-boshrelease/manifests/prometheus.yml ${arguments}
+  - put: version
