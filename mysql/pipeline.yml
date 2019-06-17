@@ -78,34 +78,17 @@ jobs:
   - put: version
      
 - name: broker-registrar
-  public: true
-  serial: true
   plan:
   - get: version
     passed: [deploy-mysql]
     trigger: true
   - get: bbl-state
+  - get: cf-pipelines
   - task: run-errand
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: 
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v6.14.0
-      inputs:
-      - name: bbl-state
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          pushd bbl-state/nonprod-1/state
-          set +x
-          eval "$(bbl print-env)"
-          set -x
-          popd
-          bosh -n -d cf-mysql run-errand broker-registrar
+    file: cf-pipelines/mysql/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND: broker-registrar
   - put: version
 
 - name: run-smoke-tests
@@ -117,26 +100,10 @@ jobs:
     trigger: true
   - get: bbl-state
   - task: run-errand
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v6.14.0
-      inputs:
-      - name: bbl-state
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          pushd bbl-state/nonprod-1/state
-          set +x
-          eval "$(bbl print-env)"
-          set -x
-          popd
-          bosh -n -d cf-mysql run-errand smoke-tests
+    file: cf-pipelines/mysql/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND: smoke-tests
 
 - name: broker-deregistrar
   public: true
@@ -146,23 +113,7 @@ jobs:
     passed: [broker-registrar]
   - get: bbl-state
   - task: run-errand
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: 
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v6.14.0
-      inputs:
-      - name: bbl-state
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          pushd bbl-state/nonprod-1/state
-          set +x
-          eval "$(bbl print-env)"
-          set -x
-          popd
-          bosh -n -d cf-mysql run-errand deregister-and-purge-instances
+    file: cf-pipelines/mysql/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND: deregister-and-purge-instances
