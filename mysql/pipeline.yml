@@ -12,6 +12,12 @@ resources:
     uri: https://github.com/cloudfoundry/cf-mysql-deployment
     branch: develop
 
+- name: cf-pipelines
+  type: git
+  source:
+    uri: https://github.com/axelaris/cf-pipelines.git
+    branch: master
+
 - name: bbl-state
   type: git
   source:
@@ -62,9 +68,13 @@ jobs:
     passed: [populate-credhub]
     trigger: true
   - get: cf-mysql-deployment
+  - get: cf-pipelines
   - get: bbl-state
   - task: deploy-mysql
     file: cf-pipelines/mysql/tasks/bosh-deploy/task.yml
+    params:
+      OPS_FILES: ((ops_files))
+      BBL_ENV: ((bbl_env))
   - put: version
      
 - name: broker-registrar
