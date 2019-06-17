@@ -10,6 +10,7 @@ image_resource:
 inputs:
   - name: bbl-state
   - name: cf-mysql-deployment
+  - name: cf-pipelines
 outputs:
 
 run:
