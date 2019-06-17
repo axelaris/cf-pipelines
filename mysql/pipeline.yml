@@ -44,11 +44,11 @@ jobs:
         args:
         - -exc
         - |
-          pushd bbl-state/bbl-state
+          pushd bbl-state/nonprod-1/state
           set +x
           eval "$(bbl print-env)"
           popd
-          ENV_ID=$(cat bbl-state/bbl-state/vars/bbl.tfvars | grep env_id | sed s/^env_id=// | sed s/\"//g)
+          ENV_ID=$(cat bbl-state/nonprod-1/state/vars/bbl.tfvars | grep env_id | sed s/^env_id=// | sed s/\"//g)
           CFPSW=$(credhub get -n /bosh-$ENV_ID/cf/cf_admin_password | grep ^value | awk '{print $2}')
           credhub set -n /bosh-$ENV_ID/cf-mysql/cf_admin_password -t value -v $CFPSW
           set -x
@@ -64,34 +64,7 @@ jobs:
   - get: cf-mysql-deployment
   - get: bbl-state
   - task: deploy-mysql
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v6.14.0
-      inputs:
-      - name: bbl-state
-      - name: cf-mysql-deployment
-      params:
-        OPS_FILES: ((ops_files))
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          pushd bbl-state/bbl-state
-          set +x
-          eval "$(bbl print-env)"
-          set -x
-          popd
-          arguments="-l bbl-state/vars/mysql/vars.yml"
-          for op in ${OPS_FILES}
-          do
-            arguments="${arguments} -o cf-mysql-deployment/operations/${op}"
-          done
-          bosh -n -d cf-mysql deploy cf-mysql-deployment/cf-mysql-deployment.yml ${arguments}
+    file: cf-pipelines/mysql/tasks/bosh-deploy/task.yml
   - put: version
      
 - name: broker-registrar
@@ -117,7 +90,7 @@ jobs:
         args:
         - -exc
         - |
-          pushd bbl-state/bbl-state
+          pushd bbl-state/nonprod-1/state
           set +x
           eval "$(bbl print-env)"
           set -x
@@ -148,7 +121,7 @@ jobs:
         args:
         - -exc
         - |
-          pushd bbl-state/bbl-state
+          pushd bbl-state/nonprod-1/state
           set +x
           eval "$(bbl print-env)"
           set -x
@@ -159,23 +132,27 @@ jobs:
   public: true
   serial: true
   plan:
-  - get: bbl-state
+  - get: version
     passed: [broker-registrar]
+  - get: bbl-state
   - task: run-errand
     config:
       platform: linux
       image_resource:
         type: docker-image
-        source: {repository: amuessig/concourse-bosh}
-      params:
-        BOSH_ENVIRONMENT: ((bosh-director))
-        BOSH_CA_CERT: ((bosh-cert))
-        BOSH_CLIENT: ((bosh-username))
-        BOSH_CLIENT_SECRET: ((bosh-password))
-        DEPLOYMENT_NAME: ((deployment_name))    
+        source: 
+          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+          tag: v6.14.0
+      inputs:
+      - name: bbl-state
       run:
         path: bash
         args:
         - -exc
         - |
-          bosh -d $DEPLOYMENT_NAME run-errand broker-deregistrar
+          pushd bbl-state/nonprod-1/state
+          set +x
+          eval "$(bbl print-env)"
+          set -x
+          popd
+          bosh -n -d cf-mysql run-errand deregister-and-purge-instances
