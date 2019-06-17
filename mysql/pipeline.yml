@@ -99,6 +99,7 @@ jobs:
     passed: [broker-registrar]
     trigger: true
   - get: bbl-state
+  - get: cf-pipelines
   - task: run-errand
     file: cf-pipelines/mysql/tasks/run-errand/task.yml
     params:
