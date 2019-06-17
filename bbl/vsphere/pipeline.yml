@@ -1,0 +1,88 @@
+resources:
+- name: cf-deployment-concourse-tasks
+  type: git
+  source:
+    uri: https://github.com/alexw19/cf-deployment-concourse-tasks.git
+    branch: master
+
+- name: bbl-state
+  type: git
+  source:
+    uri: ((bbl_state_repo))
+    branch: master
+    private_key: ((git_private_key))
+
+groups:
+- name: create
+  jobs:
+  - bootstrap-env
+- name: destroy
+  jobs:
+  - wipe-env
+
+jobs:
+- name: bootstrap-env
+  plan:
+  - get: cf-deployment-concourse-tasks
+  - get: bbl-state
+  - task: bbl-up
+    file: cf-deployment-concourse-tasks/bbl-up/task.yml
+    input_mapping:
+      bbl-config: bbl-state
+      updated-bbl-state: bbl-state
+    params:
+      SKIP_LB_CREATION: true
+      BBL_IAAS: ((BBL_IAAS))
+      BBL_CONFIG_DIR: ((BBL_ENV_NAME))/config
+      BBL_STATE_DIR: ((BBL_ENV_NAME))/state
+      BBL_VSPHERE_VCENTER_USER: ((BBL_VSPHERE_VCENTER_USER))
+      BBL_VSPHERE_VCENTER_PASSWORD: ((BBL_VSPHERE_VCENTER_PASSWORD))
+      BBL_VSPHERE_VCENTER_IP: ((BBL_VSPHERE_VCENTER_IP))
+      BBL_VSPHERE_VCENTER_DC: ((BBL_VSPHERE_VCENTER_DC))
+      BBL_VSPHERE_VCENTER_CLUSTER: ((BBL_VSPHERE_VCENTER_CLUSTER))
+      BBL_VSPHERE_VCENTER_RP: ((BBL_VSPHERE_VCENTER_RP))
+      BBL_VSPHERE_NETWORK: ((BBL_VSPHERE_NETWORK))
+      BBL_VSPHERE_VCENTER_DS: ((BBL_VSPHERE_VCENTER_DS))
+      BBL_VSPHERE_SUBNET_CIDR: ((BBL_VSPHERE_SUBNET_CIDR))
+      BBL_VSPHERE_VCENTER_DISKS: ((BBL_VSPHERE_VCENTER_DISKS))
+      BBL_VSPHERE_VCENTER_TEMPLATES: ((BBL_VSPHERE_VCENTER_TEMPLATES))
+      BBL_VSPHERE_VCENTER_VMS: ((BBL_VSPHERE_VCENTER_VMS))
+      GIT_COMMIT_EMAIL: ((git_commit_email))
+      DEBUG_MODE: true
+  ensure:
+    put: bbl-state
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
+- name: wipe-env
+  plan:
+  - get: cf-deployment-concourse-tasks
+  - get: bbl-state
+    passed:
+    - bootstrap-env
+  - task: bbl-destroy
+    file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+    input_mapping:
+      updated-bbl-state: bbl-state
+    params:
+      BBL_STATE_DIR: ((BBL_ENV_NAME))/state
+      BBL_VSPHERE_VCENTER_USER: ((BBL_VSPHERE_VCENTER_USER))
+      BBL_VSPHERE_VCENTER_PASSWORD: ((BBL_VSPHERE_VCENTER_PASSWORD))
+      BBL_VSPHERE_VCENTER_IP: ((BBL_VSPHERE_VCENTER_IP))
+      BBL_VSPHERE_VCENTER_DC: ((BBL_VSPHERE_VCENTER_DC))
+      BBL_VSPHERE_VCENTER_CLUSTER: ((BBL_VSPHERE_VCENTER_CLUSTER))
+      BBL_VSPHERE_VCENTER_RP: ((BBL_VSPHERE_VCENTER_RP))
+      BBL_VSPHERE_NETWORK: ((BBL_VSPHERE_NETWORK))
+      BBL_VSPHERE_VCENTER_DS: ((BBL_VSPHERE_VCENTER_DS))
+      BBL_VSPHERE_SUBNET_CIDR: ((BBL_VSPHERE_SUBNET_CIDR))
+      BBL_VSPHERE_VCENTER_DISKS: ((BBL_VSPHERE_VCENTER_DISKS))
+      BBL_VSPHERE_VCENTER_TEMPLATES: ((BBL_VSPHERE_VCENTER_TEMPLATES))
+      BBL_VSPHERE_VCENTER_VMS: ((BBL_VSPHERE_VCENTER_VMS))
+      GIT_COMMIT_EMAIL: ((git_commit_email))
+  ensure:
+    put: bbl-state
+    params:
+      repository: updated-bbl-state
+      rebase: true
+
