@@ -35,6 +35,7 @@ jobs:
   plan:
   - get: version
   - get: bbl-state
+  - get: cf-pipelines
   - task: populate-credhub
     file: cf-pipelines/mysql/tasks/populate-credhub/task.yml
     params:
