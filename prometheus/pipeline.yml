@@ -39,6 +39,8 @@ jobs:
   - get: cf-pipelines
   - task: populate-credhub
     file: cf-pipelines/prometheus/tasks/populate-credhub/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
   - put: version
 
 - name: deploy
