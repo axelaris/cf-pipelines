@@ -1,4 +1,1 @@
 ops_files: "monitor-bosh.yml monitor-cf.yml"
-bbl_state_repo:
-
-git_private_key: |

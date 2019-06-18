@@ -1,0 +1,21 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v6.15.0
+
+inputs:
+  - name: bbl-state
+  - name: prometheus-boshrelease
+  - name: cf-pipelines
+outputs:
+
+run:
+  path: cf-pipelines/prometheus/tasks/bosh-deploy/task.sh
+
+params:
+  OPS_FILES: 
+  BBL_ENV:
