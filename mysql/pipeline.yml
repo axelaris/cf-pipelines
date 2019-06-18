@@ -36,28 +36,9 @@ jobs:
   - get: version
   - get: bbl-state
   - task: populate-credhub
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
-          tag: v6.14.0
-      inputs:
-      - name: bbl-state
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          pushd bbl-state/nonprod-1/state
-          set +x
-          eval "$(bbl print-env)"
-          popd
-          ENV_ID=$(cat bbl-state/nonprod-1/state/vars/bbl.tfvars | grep env_id | sed s/^env_id=// | sed s/\"//g)
-          CFPSW=$(credhub get -n /bosh-$ENV_ID/cf/cf_admin_password | grep ^value | awk '{print $2}')
-          credhub set -n /bosh-$ENV_ID/cf-mysql/cf_admin_password -t value -v $CFPSW
-          set -x
+    file: cf-pipelines/mysql/tasks/populate-credhub/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
   - put: version
 
 - name: deploy-mysql
