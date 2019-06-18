@@ -1,0 +1,93 @@
+---
+resource_types:
+- name: concourse-pipeline
+  type: docker-image
+  source:
+    repository: concourse/concourse-pipeline-resource
+
+resources:
+- name: ci
+  type: concourse-pipeline
+  source:
+    target: http://192.168.2.10:8080
+    insecure: "true"
+    teams:
+    - name: main
+      username: admin
+      password: pa88w0rd
+
+- name: cf-pipelines
+  type: git
+  source:
+    uri: https://github.com/axelaris/cf-pipelines.git
+    branch: master
+
+- name: bbl-state
+  type: git
+  source:
+    uri: ((bbl_state_repo))
+    branch: master
+    private_key: ((git_private_key))
+
+jobs:
+- name: bbl
+  plan:
+  - get: bbl-state
+  - get: cf-pipelines
+  - put: ci
+    params:
+      pipelines:
+      - name: bbl
+        team: main
+        config_file: cf-pipelines/bbl/vsphere/pipeline.yml
+        vars_files:
+        - bbl-state/nonprod-1/vars/bbl/ci-vars.yml
+        unpaused: true
+
+- name: cf
+  plan:
+  - get: bbl-state
+  - get: cf-pipelines
+    passed: [bbl]
+    trigger: true
+  - put: ci
+    params:
+      pipelines:
+      - name: cf
+        team: main
+        config_file: cf-pipelines/cf/pipeline.yml
+        vars_files:
+        - bbl-state/nonprod-1/vars/cf/ci-vars.yml
+        unpaused: true
+
+- name: mysql
+  plan:
+  - get: bbl-state
+  - get: cf-pipelines
+    passed: [cf]
+    trigger: true
+  - put: ci
+    params:
+      pipelines:
+      - name: mysql
+        team: main
+        config_file: cf-pipelines/mysql/pipeline.yml
+        vars_files:
+        - bbl-state/nonprod-1/vars/mysql/ci-vars.yml
+        unpaused: true
+
+- name: prometheus
+  plan:
+  - get: bbl-state
+  - get: cf-pipelines
+    passed: [mysql]
+    trigger: true
+  - put: ci
+    params:
+      pipelines:
+      - name: prometheus
+        team: main
+        config_file: cf-pipelines/prometheus/pipeline.yml
+        vars_files:
+        - bbl-state/nonprod-1/vars/prometheus/ci-vars.yml
+        unpaused: true
