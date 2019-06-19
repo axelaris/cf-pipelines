@@ -62,9 +62,7 @@ jobs:
     file: cf-pipelines/cf/tasks/bosh-deploy/task.yml
     params:
       OPS_FILES: ((ops_files))
-      VAR_FILES: ((var_files))
       BBL_ENV: ((bbl_env))
-
 
 - name: smoke-tests
   plan:

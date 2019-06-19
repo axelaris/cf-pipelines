@@ -15,9 +15,8 @@ inputs:
 outputs:
 
 run:
-  path: cf-pipelines/mysql/tasks/bosh-deploy/task.sh
+  path: cf-pipelines/cf/tasks/bosh-deploy/task.sh
 
 params:
   OPS_FILES:
-  VAR_FILES: 
   BBL_ENV:
