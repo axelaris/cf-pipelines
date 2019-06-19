@@ -74,7 +74,7 @@ jobs:
   - task: smoke-tests
     file: cf-deployment-concourse-tasks/run-errand/task.yml
     params:
-      BBL_STATE_DIR: ((BBL_ENV_NAME))/state
+      BBL_STATE_DIR: ((bbl_env))/state
       ERRAND_NAME: smoke-tests
 
 - name: delete-cf
