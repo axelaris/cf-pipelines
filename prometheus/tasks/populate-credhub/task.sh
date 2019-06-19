@@ -3,7 +3,6 @@
 pushd bbl-state/${BBL_ENV}/state
 eval "$(bbl print-env)"
 popd
-set -x
 CH="/bosh-bbl-env-${BBL_ENV}"
 CHP="${CH}/prometheus"
 credhub set -n ${CHP}/bosh_url -t value -v "${BOSH_ENVIRONMENT}"
