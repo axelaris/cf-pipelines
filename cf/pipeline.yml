@@ -6,6 +6,13 @@ resources:
     branch: master
     tag_filter: ((cf_version))
 
+- name: prometheus-boshrelease
+  type: git
+  source:
+    uri: https://github.com/bosh-prometheus/prometheus-boshrelease
+    branch: master
+    tag_filer: ((prometheus_version))
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -20,23 +27,38 @@ resources:
     private_key: ((git_private_key))
 
 jobs:
-- name: deploy-cf
+# - name: deploy-cf
+#   plan:
+#   - get: cf-deployment
+#   - get: cf-deployment-concourse-tasks
+#   - get: bbl-state
+#     trigger: true
+#   - task: deploy-cf
+#     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+#     input_mapping:
+#       ops-files: cf-deployment
+#       vars-files: bbl-state
+#     params:
+#       BBL_CONFIG_DIR: ((BBL_ENV_NAME))/config
+#       BBL_STATE_DIR: ((BBL_ENV_NAME))/state
+#       INFRASTRUCTURE: ((BBL_IAAS))
+#       SYSTEM_DOMAIN: ((cf_domain))
+#       OPS_FILES: ((OPS_FILES))
+
+- name: deploy-cf-prometheus
   plan:
+#    trigger: true
   - get: cf-deployment
-  - get: cf-deployment-concourse-tasks
+  - get: prometheus-boshrelease
+  - get: cf-pipelines
   - get: bbl-state
-    trigger: true
-  - task: deploy-cf
-    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-    input_mapping:
-      ops-files: cf-deployment
-      vars-files: bbl-state
+  - task: deploy-cf-prometheus
+    file: cf-pipelines/cf/tasks/bosh-deploy/task.yml
     params:
-      BBL_CONFIG_DIR: ((BBL_ENV_NAME))/config
-      BBL_STATE_DIR: ((BBL_ENV_NAME))/state
-      INFRASTRUCTURE: ((BBL_IAAS))
-      SYSTEM_DOMAIN: ((cf_domain))
-      OPS_FILES: ((OPS_FILES))
+      OPS_FILES: ((ops_files))
+      VAR_FILES: ((var_files))
+      BBL_ENV: ((bbl_env))
+
 
 - name: smoke-tests
   plan:
