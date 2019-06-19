@@ -51,14 +51,14 @@ jobs:
 #       SYSTEM_DOMAIN: ((cf_domain))
 #       OPS_FILES: ((OPS_FILES))
 
-- name: deploy-cf-prometheus
+- name: deploy-cf
   plan:
 #    trigger: true
   - get: cf-deployment
   - get: prometheus-boshrelease
   - get: cf-pipelines
   - get: bbl-state
-  - task: deploy-cf-prometheus
+  - task: deploy-cf
     file: cf-pipelines/cf/tasks/bosh-deploy/task.yml
     params:
       OPS_FILES: ((ops_files))
