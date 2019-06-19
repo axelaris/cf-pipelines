@@ -19,6 +19,12 @@ resources:
     uri: https://github.com/alexw19/cf-deployment-concourse-tasks.git
     branch: master
 
+- name: cf-pipelines
+  type: git
+  source:
+    uri: https://github.com/axelaris/cf-pipelines.git
+    branch: master
+
 - name: bbl-state
   type: git
   source:
