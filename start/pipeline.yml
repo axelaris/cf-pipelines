@@ -9,12 +9,12 @@ resources:
 - name: ci
   type: concourse-pipeline
   source:
-    target: http://192.168.2.10:8080
-    insecure: "true"
+    target: ((concourse.address))
+    insecure: ((concourse.insecure))
     teams:
     - name: main
-      username: admin
-      password: pa88w0rd
+      username: ((concourse.username))
+      password: ((concourse.password))
 
 - name: cf-pipelines
   type: git
@@ -41,7 +41,7 @@ jobs:
         team: main
         config_file: cf-pipelines/bbl/vsphere/pipeline.yml
         vars_files:
-        - bbl-state/nonprod-1/vars/bbl/ci-vars.yml
+        - bbl-state/((env_name))/vars/bbl/ci-vars.yml
         unpaused: true
 
 - name: cf
@@ -57,7 +57,7 @@ jobs:
         team: main
         config_file: cf-pipelines/cf/pipeline.yml
         vars_files:
-        - bbl-state/nonprod-1/vars/cf/ci-vars.yml
+        - bbl-state/((env_name))/vars/cf/ci-vars.yml
         unpaused: true
 
 - name: mysql
@@ -73,7 +73,7 @@ jobs:
         team: main
         config_file: cf-pipelines/mysql/pipeline.yml
         vars_files:
-        - bbl-state/nonprod-1/vars/mysql/ci-vars.yml
+        - bbl-state/((env_name))/vars/mysql/ci-vars.yml
         unpaused: true
 
 - name: prometheus
@@ -89,5 +89,5 @@ jobs:
         team: main
         config_file: cf-pipelines/prometheus/pipeline.yml
         vars_files:
-        - bbl-state/nonprod-1/vars/prometheus/ci-vars.yml
+        - bbl-state/((env_name))/vars/prometheus/ci-vars.yml
         unpaused: true
