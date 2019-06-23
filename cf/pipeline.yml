@@ -32,6 +32,15 @@ resources:
     branch: master
     private_key: ((git_private_key))
 
+groups:
+- name: create
+  jobs:
+  - deploy-cf
+  - smoke-tests
+- name: destroy
+  jobs:
+  - delete-cf
+
 jobs:
 # - name: deploy-cf
 #   plan:
@@ -85,3 +94,5 @@ jobs:
     - deploy-cf
   - task: delete-cf
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
+    params:
+      BBL_STATE_DIR: ((bbl_env))/state
