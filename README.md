@@ -36,21 +36,21 @@ Where `controlplane`, `nonprod` and `staging` - deployment environments, `config
 
 Please use a following walkthrough to create that:
 
-- [ ] Create a private git repo. It is a good practice to set the name corresponding to your datacenter name, e.g. **dc-denver** 
-- [ ] From your jumpbox, create a new keypair, and upload a public part to the repo as a deploy key: `ssh-keygen -f dc-denver.pem`
-- [ ] Create a **controlplane/config** dir, and put override files for BBL. These files will be copied to BBL state directory after `bbl plan` step, and before `bbl up`.
-- [ ] Go to **controlplane/state** directory, create [.envrc](https://direnv.net) file, and fill it with envirionment variables, needed to authenticate against IaaS ([example](examples/.envrc-vsphere)).
-- [ ] Commit changes
-- [ ] Do `bbl plan`, then copy override files over: `cp -pr ../config/* .`
-- [ ] Commit changes
-- [ ] Do `bbl up`
-- [ ] Commit changes
+- Create a private git repo. It is a good practice to set the name corresponding to your datacenter name, e.g. **dc-denver** 
+- From your jumpbox, create a new keypair, and upload a public part to the repo as a deploy key: `ssh-keygen -f dc-denver.pem`
+- Create a **controlplane/config** dir, and put override files for BBL. These files will be copied to BBL state directory after `bbl plan` step, and before `bbl up`.
+- Go to **controlplane/state** directory, create [.envrc](https://direnv.net) file, and fill it with envirionment variables, needed to authenticate against IaaS ([example](examples/.envrc-vsphere)).
+- Commit changes
+- Do `bbl plan`, then copy override files over: `cp -pr ../config/* .`
+- Commit changes
+- Do `bbl up`
+- Commit changes
 
 ## Concourse
 The main purpose of Controlplane is to keep a Concourse deployment. Here is a walkthrough of deployment:
 
-- [ ] Go to [bosh.io](https://bosh.io/stemcells/), find and upload an appropriate stemcell
-- [ ] Clone [Concourse](https://github.com/concourse/concourse-bosh-deployment/) repo and check it out to latest stable tag.
-- [ ] Goto `/cluster` dir and create a [deploy-concourse.sh](examples/deploy-concourse.sh) script there.
-- [ ] Put the Credhub CA into a file: `echo "$CREDHUB_CA_CERT" >credhub_ca`
-- [ ] Run `./deploy-concourse.sh`
+- Go to [bosh.io](https://bosh.io/stemcells/), find and upload an appropriate stemcell
+- Clone [Concourse](https://github.com/concourse/concourse-bosh-deployment/) repo and check it out to latest stable tag.
+- Goto `/cluster` dir and create a [deploy-concourse.sh](examples/deploy-concourse.sh) script there.
+- Put the Credhub CA into a file: `echo "$CREDHUB_CA_CERT" >credhub_ca`
+- Run `./deploy-concourse.sh`
