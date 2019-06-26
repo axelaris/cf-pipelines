@@ -1,0 +1,7 @@
+export BBL_IAAS=aws
+export BBL_ENV_NAME=
+export BBL_AWS_ACCESS_KEY_ID=
+export BBL_AWS_SECRET_ACCESS_KEY=
+export BBL_AWS_REGION=
+export bbl_state_repo=
+export git_commit_email=
