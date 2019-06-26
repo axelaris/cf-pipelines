@@ -1,12 +1,10 @@
 bosh  deploy -d concourse concourse.yml \
   -l ../versions.yml \
-  -o operations/static-web.yml \
   -o operations/basic-auth.yml \
   -o operations/credhub.yml \
   -o operations/worker-ephemeral-disk.yml \
   --var local_user.username=admin \
   --var local_user.password="xxxxxxxx" \
-  --var web_ip=192.168.2.10 \
   --var external_url=http://concourse.example.com:8080 \
   --var network_name=default \
   --var web_vm_type=default \
@@ -20,13 +18,22 @@ bosh  deploy -d concourse concourse.yml \
   --var credhub_client_secret=$CREDHUB_SECRET \
   --var-file credhub_ca_cert=credhub_ca
 
-# TLS
+# vSphere
+# -o operations/static-web.yml \
+# --var web_ip=192.168.2.10 \
+
+# AWS
 # -o operations/privileged-http.yml \
+# -o operations/web-network-extension.yml \
+# --var web_network_name=default \
+# --var web_network_vm_extension=lb \
+
+# TLS
 # -o operations/privileged-https.yml \
 # -o operations/tls.yml \
 # -o operations/tls-vars.yml \
 
-# In case of internal proxy:
+# Internal proxy:
 # -o operations/http-proxy.yml \
 # --var http_proxy_url="http://proxy:8080" \
 # --var https_proxy_url="http://proxy:8080" \

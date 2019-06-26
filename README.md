@@ -41,7 +41,7 @@ Please use a following walkthrough to create that:
 - Create a **controlplane/config** dir, and put override files for BBL. These files will be copied to BBL state directory after `bbl plan` step, and before `bbl up`.
 - Go to **controlplane/state** directory, create [.envrc](https://direnv.net) file, and fill it with envirionment variables, needed to authenticate against IaaS ([example](examples/.envrc-vsphere)).
 - Commit changes
-- Do `bbl plan`, then copy override files over: `cp -pr ../config/* .`
+- Do `bbl plan --lb-type concourse`, then copy override files over: `cp -pr ../config/* .`
 - Commit changes
 - Do `bbl up`
 - Commit changes
