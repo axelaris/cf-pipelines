@@ -39,7 +39,7 @@ jobs:
       pipelines:
       - name: bbl
         team: main
-        config_file: cf-pipelines/bbl/vsphere/pipeline.yml
+        config_file: cf-pipelines/bbl/((iaas))/pipeline.yml
         vars_files:
         - bbl-state/((env_name))/vars/bbl/ci-vars.yml
         unpaused: true

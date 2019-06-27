@@ -2,6 +2,7 @@ concourse:
   address: http:/my-concourse:8080
   username: admin
   password: 
-  insecure: true
+  insecure: "true"
 
 env_name: nonprod-1
+iaas: vsphere
