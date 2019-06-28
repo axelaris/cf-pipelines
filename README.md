@@ -4,10 +4,10 @@ This repo contains [Concourse](https://concourse-ci.org) pipelines for [CF deplo
 ## Jumpbox
 Usually, it is recommended to have a jumpbox VM in chosen cloud environment to run all deployments from there. I recommend to use Ubuntu 16.04 LTS with following CLI tools installed:
 
-- [bbl](https://github.com/cloudfoundry/bosh-bootloader/releases)
-- [bosh](https://bosh.io/docs/cli-v2-install)
-- [credhub](https://github.com/cloudfoundry-incubator/credhub-cli/releases)
-- [cf](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html)
+- [bbl](https://github.com/cloudfoundry/bosh-bootloader/releases) [tested on 8.1.0]
+- [bosh](https://bosh.io/docs/cli-v2-install) [tested on 5.5.1]
+- [credhub](https://github.com/cloudfoundry-incubator/credhub-cli/releases) [tested on 2.5.1]
+- [cf](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html) [tested on 6.40.1]
 - git, libcurl4-gnutls-dev
 
 ## State/Config/Vars repo
@@ -45,6 +45,7 @@ Please use a following walkthrough to create that:
 - Commit changes
 - Do `bbl up`
 - Commit changes
+- Put a line ```eval "`bbl print-env`"``` to the `.envrc` file
 
 ## Concourse
 The main purpose of Controlplane is to keep a Concourse deployment. Here is a walkthrough of deployment:
@@ -54,3 +55,16 @@ The main purpose of Controlplane is to keep a Concourse deployment. Here is a wa
 - Goto `/cluster` dir and create a [deploy-concourse.sh](examples/deploy-concourse.sh) script there.
 - Put the Credhub CA into a file: `echo "$CREDHUB_CA_CERT" >credhub_ca`
 - Run `./deploy-concourse.sh`
+- *Optional: Save filled `deploy-concourse.sh` script into `controlplane/concourse` folder for future reference.* 
+
+## Pipelines
+
+- Before running any pipeline, you have to put some important variables, such as IAAS credentials to Credhub. Please use [populate-credhub.sh](examples/populate-credhub-aws.sh) example. You have to put and run this script from `/state` directory to catch some env variables.
+- Clone this repo
+- Goto [start](start) folder, fill vars file, and fly this pipeline to Concourse
+- Prepare directory for new environment (ex. nonprod-1):
+	- Create `nonprod-1/config` directory, put override files there
+	- Create `nonprod-1/vars` directory, and directories for all other pipelines there
+	- Put and fill vars files for all pipelines
+	- Commit changes
+- Trigger **start** pipeline
