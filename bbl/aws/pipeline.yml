@@ -1,4 +1,14 @@
+resource_types:
+- name: concourse-version-resource
+  type: docker-image
+  source:
+    repository: meteogroup/concourse-version-resource
+
 resources:
+
+- name: version
+  type: concourse-version-resource
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -13,17 +23,38 @@ resources:
     branch: master
     private_key: ((git_private_key))
 
+- name: cf-pipelines
+  type: git
+  source:
+    uri: https://github.com/axelaris/cf-pipelines.git
+    branch: master
+
 groups:
 - name: create
   jobs:
+  - populate-credhub
   - bootstrap-env
 - name: destroy
   jobs:
   - wipe-env
 
 jobs:
+- name: populate-credhub
+  plan:
+  - get: version
+  - get: bbl-state
+  - get: cf-pipelines
+  - task: populate-credhub
+    file: cf-pipelines/bbl/tasks/populate-credhub/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+  - put: version
+
 - name: bootstrap-env
   plan:
+  - get: version
+    passed: 
+    - populate-credhub
   - get: cf-deployment-concourse-tasks
   - get: bbl-state
   - task: bbl-up
