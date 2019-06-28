@@ -39,10 +39,15 @@ jobs:
       BBL_AWS_ACCESS_KEY_ID: ((BBL_AWS_ACCESS_KEY_ID))
       BBL_AWS_SECRET_ACCESS_KEY: ((BBL_AWS_SECRET_ACCESS_KEY))
       BBL_AWS_REGION: ((BBL_AWS_REGION))
-      BBL_LB_CERT: ((BBL_LB_CERT))
-      BBL_LB_CERT_CHAIN: ((BBL_LB_CERT_CHAIN))
-      BBL_LB_KEY: ((BBL_LB_KEY))
+      BBL_LB_CERT: ((tls.certificate))
+      BBL_LB_CERT_CHAIN: ((tls.ca))
+      BBL_LB_KEY: ((tls.private_key))
       LB_DOMAIN: ((LB_DOMAIN))
+      # Next 4 vars due to BBL bug:
+      TF_VAR_ssl_certificate: ((tls.certificate))
+      TF_VAR_ssl_certificate_chain: ((tls.ca))
+      TF_VAR_ssl_certificate_private_key: ((tls.private_key))
+      TF_VAR_system_domain: ((LB_DOMAIN))
       GIT_COMMIT_EMAIL: ((git_commit_email))
       DEBUG_MODE: true
   ensure:
