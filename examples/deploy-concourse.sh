@@ -34,7 +34,9 @@ bosh  deploy -d concourse concourse.yml \
 # -o operations/tls-vars.yml \
 # --var external_host=ci.example.com \
 # --var external_url=https://concourse.example.com \
-# (if you want to provide your own cert - do it trough file, because credhub still have troubles with it)
+#
+# Replace default certs with your own:
+# credhub set -n /bosh-${BBL_ENV_NAME}/concourse/atc_tls -t certificate -p "`cat atc_tls.key`" -c "`cat atc_tls.cert`" -r "`cat atc_tls.ca`"
 
 # Internal proxy:
 # -o operations/http-proxy.yml \

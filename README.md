@@ -6,7 +6,7 @@ Usually, it is recommended to have a jumpbox VM in chosen cloud environment to r
 
 - [bbl](https://github.com/cloudfoundry/bosh-bootloader/releases) [tested on 8.1.0]
 - [bosh](https://bosh.io/docs/cli-v2-install) [tested on 5.5.1]
-- [credhub](https://github.com/cloudfoundry-incubator/credhub-cli/releases) [tested on 2.5.1]
+- [credhub](https://github.com/cloudfoundry-incubator/credhub-cli/releases) [tested on 2.4.0]
 - [cf](https://docs.cloudfoundry.org/cf-cli/install-go-cli.html) [tested on 6.40.1]
 - git, libcurl4-gnutls-dev
 
