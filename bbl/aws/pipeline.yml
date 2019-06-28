@@ -47,7 +47,7 @@ jobs:
   - task: populate-credhub
     file: cf-pipelines/bbl/tasks/populate-credhub/task.yml
     params:
-      BBL_ENV: ((BBL_ENV_NAME))
+      BBL_ENV: controlplane
   - put: version
 
 - name: bootstrap-env
