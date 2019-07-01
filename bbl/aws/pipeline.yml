@@ -55,6 +55,7 @@ jobs:
   - get: version
     passed: 
     - populate-credhub
+    trigger: true
   - get: cf-deployment-concourse-tasks
   - get: bbl-state
   - task: bbl-up
