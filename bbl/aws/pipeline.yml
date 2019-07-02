@@ -1,14 +1,4 @@
-resource_types:
-- name: concourse-version-resource
-  type: docker-image
-  source:
-    repository: meteogroup/concourse-version-resource
-
 resources:
-
-- name: version
-  type: concourse-version-resource
-
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -23,39 +13,17 @@ resources:
     branch: master
     private_key: ((git_private_key))
 
-- name: cf-pipelines
-  type: git
-  source:
-    uri: https://github.com/axelaris/cf-pipelines.git
-    branch: master
-
 groups:
 - name: create
   jobs:
-  - populate-credhub
   - bootstrap-env
 - name: destroy
   jobs:
   - wipe-env
 
 jobs:
-- name: populate-credhub
-  plan:
-  - get: version
-  - get: bbl-state
-  - get: cf-pipelines
-  - task: populate-credhub
-    file: cf-pipelines/bbl/tasks/populate-credhub/task.yml
-    params:
-      BBL_ENV: controlplane
-  - put: version
-
 - name: bootstrap-env
   plan:
-  - get: version
-    passed: 
-    - populate-credhub
-    trigger: true
   - get: cf-deployment-concourse-tasks
   - get: bbl-state
   - task: bbl-up
@@ -71,14 +39,14 @@ jobs:
       BBL_AWS_ACCESS_KEY_ID: ((BBL_AWS_ACCESS_KEY_ID))
       BBL_AWS_SECRET_ACCESS_KEY: ((BBL_AWS_SECRET_ACCESS_KEY))
       BBL_AWS_REGION: ((BBL_AWS_REGION))
-      BBL_LB_CERT: ((tls.certificate))
-      BBL_LB_CERT_CHAIN: ((tls.ca))
-      BBL_LB_KEY: ((tls.private_key))
+      BBL_LB_CERT: ((cf01_ssl.certificate))
+      BBL_LB_CERT_CHAIN: ((cf01_ssl.ca))
+      BBL_LB_KEY: ((cf01_ssl.private_key))
       LB_DOMAIN: ((LB_DOMAIN))
       # Next 4 vars due to BBL bug:
-      TF_VAR_ssl_certificate: ((tls.certificate))
-      TF_VAR_ssl_certificate_chain: ((tls.ca))
-      TF_VAR_ssl_certificate_private_key: ((tls.private_key))
+      TF_VAR_ssl_certificate: ((cf01_ssl.certificate))
+      TF_VAR_ssl_certificate_chain: ((cf01_ssl.ca))
+      TF_VAR_ssl_certificate_private_key: ((cf01_ssl.private_key))
       TF_VAR_system_domain: ((LB_DOMAIN))
       GIT_COMMIT_EMAIL: ((git_commit_email))
       DEBUG_MODE: true
