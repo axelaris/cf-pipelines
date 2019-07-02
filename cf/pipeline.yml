@@ -19,12 +19,6 @@ resources:
     uri: https://github.com/alexw19/cf-deployment-concourse-tasks.git
     branch: master
 
-- name: cf-pipelines
-  type: git
-  source:
-    uri: https://github.com/axelaris/cf-pipelines.git
-    branch: master
-
 - name: bbl-state
   type: git
   source:
@@ -42,36 +36,32 @@ groups:
   - delete-cf
 
 jobs:
-# - name: deploy-cf
-#   plan:
-#   - get: cf-deployment
-#   - get: cf-deployment-concourse-tasks
-#   - get: bbl-state
-#     trigger: true
-#   - task: deploy-cf
-#     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
-#     input_mapping:
-#       ops-files: cf-deployment
-#       vars-files: bbl-state
-#     params:
-#       BBL_CONFIG_DIR: ((BBL_ENV_NAME))/config
-#       BBL_STATE_DIR: ((BBL_ENV_NAME))/state
-#       INFRASTRUCTURE: ((BBL_IAAS))
-#       SYSTEM_DOMAIN: ((cf_domain))
-#       OPS_FILES: ((OPS_FILES))
-
 - name: deploy-cf
   plan:
-#    trigger: true
   - get: cf-deployment
-  - get: prometheus-boshrelease
-  - get: cf-pipelines
+  - get: cf-deployment-concourse-tasks
   - get: bbl-state
-  - task: deploy-cf
-    file: cf-pipelines/cf/tasks/bosh-deploy/task.yml
+  - get: prometheus-boshrelease
+  - task: collect-ops-files
+    file: cf-deployment-concourse-tasks/collect-ops-files/task.yml
+    input_mapping:
+      base-ops-files: cf-deployment
+      new-ops-files: prometheus-boshrelease
     params:
-      OPS_FILES: ((ops_files))
-      BBL_ENV: ((bbl_env))
+      BASE_OPS_FILE_DIR: operations
+      NEW_OPS_FILES: ((prometheus_ops_files))
+  - task: deploy-cf
+    file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
+    input_mapping:
+      ops-files: collected-ops-files
+      vars-files: bbl-state
+    params:
+      BBL_CONFIG_DIR: ((bbl_env))/config
+      BBL_STATE_DIR: ((bbl_env))/state
+      INFRASTRUCTURE: ((BBL_IAAS))
+      SYSTEM_DOMAIN: ((cf_domain))
+      OPS_FILES: ((collected_ops_files))
+      VARS_FILES: ((bbl_env))/vars/cf/bosh-vars.yml
 
 - name: smoke-tests
   plan:
