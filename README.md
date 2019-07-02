@@ -11,7 +11,7 @@ Usually, it is recommended to have a jumpbox VM in chosen cloud environment to r
 - git, libcurl4-gnutls-dev
 
 ## State/Config/Vars repo
-In spite of this repository, containing only public parts (pipelines and tasks), you'll need an additional repository to keep a private data, such as variables, configuration and BBL state. It's directory structure should be like that:
+In spite of this repository, containing only public parts (pipelines and tasks), you'll need an additional repository to keep private data, such as variables, configuration and BBL state. It's directory structure should be like that:
 
 ```
 |
@@ -41,7 +41,7 @@ Please use a following walkthrough to create that:
 - Create a **controlplane/config** dir, and put override files for BBL. These files will be copied to BBL state directory after `bbl plan` step, and before `bbl up`.
 - Go to **controlplane/state** directory, create [.envrc](https://direnv.net) file, and fill it with envirionment variables, needed to authenticate against IaaS ([example](examples/.envrc-vsphere)).
 - Commit changes
-- Do `bbl plan --lb-type concourse`, then copy override files over: `cp -pr ../config/* .`
+- Do `bbl plan --lb-type concourse`, then copy override files over there: `cp -pr ../config/* .`
 - Commit changes
 - Do `bbl up`
 - Commit changes
@@ -56,6 +56,7 @@ The main purpose of Controlplane is to keep a Concourse deployment. Here is a wa
 - Put the Credhub CA into a file: `echo "$CREDHUB_CA_CERT" >credhub_ca`
 - Run `./deploy-concourse.sh`
 - *Optional: Save filled `deploy-concourse.sh` script into `controlplane/concourse` folder for future reference.* 
+- *Optional: Put a record for Concourse server to DNS* 
 
 ## Pipelines
 
@@ -68,3 +69,14 @@ The main purpose of Controlplane is to keep a Concourse deployment. Here is a wa
 	- Put and fill vars files for all pipelines
 	- Commit changes
 - Trigger **start** pipeline
+
+### bbl
+- [AWS] Before triggering **bbl** pipeline, please upload SSL certificates for load balancers to Controlplane's Credhub:
+
+	```
+	$ CA=`sudo cat /etc/letsencrypt/live/cf.example.com/chain.pem`
+	$ CERT=`sudo cat /etc/letsencrypt/live/cf.example.com/cert.pem`
+	$ KEY=`sudo cat /etc/letsencrypt/live/cf.example.com/privkey.pem`
+	$ credhub set -n /concourse/main/bbl/nonprod-1_ssl -t certificate -p "${KEY}" -c "${CERT}" -r "${CA}"
+	```
+- [AWS] [[bug]](https://github.com/cloudfoundry/bosh-bootloader/pull/474) Please add 4443 port to `cf-router-lb-security-group`. 
