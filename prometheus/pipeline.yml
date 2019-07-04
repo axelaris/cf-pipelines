@@ -73,7 +73,7 @@ jobs:
   - get: cf-pipelines
   - get: bbl-state
   - task: undeploy
-    file: cf-pipelines/mysql/tasks/undeploy/task.yml
+    file: cf-pipelines/prometheus/tasks/undeploy/task.yml
     params:
       BBL_ENV: ((bbl_env))
      
