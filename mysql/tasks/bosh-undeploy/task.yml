@@ -13,7 +13,7 @@ inputs:
 outputs:
 
 run:
-  path: cf-pipelines/mysql/tasks/bosh-deploy/task.sh
+  path: cf-pipelines/mysql/tasks/bosh-undeploy/task.sh
 
 params:
   BBL_ENV:
