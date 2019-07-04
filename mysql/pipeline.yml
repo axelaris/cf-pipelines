@@ -28,10 +28,20 @@ resources:
 - name: version
   type: concourse-version-resource
 
+groups:
+- name: create
+  jobs:
+  - populate-credhub
+  - deploy-mysql
+  - broker-registrar
+  - smoke-tests
+- name: destroy
+  jobs:
+  - broker-deregistrar
+  - undeploy-mysql
+
 jobs:
 - name: populate-credhub
-  public: true
-  serial: true
   plan:
   - get: version
   - get: bbl-state
@@ -43,8 +53,6 @@ jobs:
   - put: version
 
 - name: deploy-mysql
-  public: true
-  serial: true
   plan:
   - get: version
     passed: [populate-credhub]
@@ -73,9 +81,7 @@ jobs:
       ERRAND: broker-registrar
   - put: version
 
-- name: run-smoke-tests
-  public: true
-  serial: true
+- name: smoke-tests
   plan:
   - get: version
     passed: [broker-registrar]
@@ -89,14 +95,25 @@ jobs:
       ERRAND: smoke-tests
 
 - name: broker-deregistrar
-  public: true
-  serial: true
   plan:
   - get: version
     passed: [broker-registrar]
   - get: bbl-state
+  - get: cf-pipelines
   - task: run-errand
     file: cf-pipelines/mysql/tasks/run-errand/task.yml
     params:
       BBL_ENV: ((bbl_env))
       ERRAND: deregister-and-purge-instances
+
+- name: undeploy-mysql
+  plan:
+  - get: version
+    passed: [broker-deregistrar]
+    trigger: true
+  - get: cf-pipelines
+  - get: bbl-state
+  - task: deploy-mysql
+    file: cf-pipelines/mysql/tasks/bosh-undeploy/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
