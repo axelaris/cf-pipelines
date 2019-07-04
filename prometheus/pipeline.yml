@@ -29,6 +29,15 @@ resources:
 - name: version
   type: concourse-version-resource
 
+groups:
+- name: create
+  jobs:
+  - populate-credhub
+  - deploy
+- name: destroy
+  jobs:
+  - undeploy
+
 jobs:
 - name: populate-credhub
   public: true
@@ -58,4 +67,13 @@ jobs:
     params:
       BBL_ENV: ((bbl_env))
       OPS_FILES: ((ops_files))
+
+- name: undeploy
+  plan:
+  - get: cf-pipelines
+  - get: bbl-state
+  - task: undeploy
+    file: cf-pipelines/mysql/tasks/undeploy/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
      

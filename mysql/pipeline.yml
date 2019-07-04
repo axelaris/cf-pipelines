@@ -113,7 +113,7 @@ jobs:
     trigger: true
   - get: cf-pipelines
   - get: bbl-state
-  - task: deploy-mysql
+  - task: undeploy-mysql
     file: cf-pipelines/mysql/tasks/bosh-undeploy/task.yml
     params:
       BBL_ENV: ((bbl_env))
