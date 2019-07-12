@@ -1,0 +1,82 @@
+resources:
+- name: logsearch-boshrelease
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
+    branch: develop
+
+- name: cf-pipelines
+  type: git
+  source:
+    uri: https://github.com/axelaris/cf-pipelines.git
+    branch: master
+
+- name: bbl-state
+  type: git
+  source:
+    uri: ((bbl_state_repo))
+    branch: master
+    private_key: ((git_private_key))
+
+jobs:
+- name: deploy-logsearch
+  plan:
+  - get: logsearch-boshrelease
+  - get: cf-pipelines
+  - get: bbl-state
+  - task: deploy-logsearch
+    file: cf-pipelines/logsearch/tasks/deploy/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      SYSTEM_DOMAIN: ((system_domain))
+      OPS_FILES: ((ops_files))
+      
+- name: smoke-tests
+  plan:
+  - get: cf-pipelines
+  - get: bbl-state
+    passed:
+    - deploy-logsearch
+    trigger: true
+  - task: smoke-tests
+    file: cf-pipelines/logsearch/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND_NAME: smoke-tests
+
+- name: create-uaa-client
+  plan:
+  - get: cf-pipelines
+  - get: bbl-state
+    passed:
+    - smoke-tests
+    trigger: false
+  - task: create-uaa-client
+    file: cf-pipelines/logsearch/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND_NAME: create-uaa-client
+
+- name: upload-kibana-objects
+  plan:
+  - get: cf-pipelines
+  - get: bbl-state
+    passed:
+    - create-uaa-client
+    trigger: false
+  - task: upload-kibana-objects
+    file: cf-pipelines/logsearch/tasks/run-errand/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
+      ERRAND_NAME: upload-kibana-objects
+
+- name: delete-logsearch
+  plan:
+  - get: cf-pipelines
+  - get: bbl-state
+    passed:
+    - deploy-logsearch
+  - task: delete-logsearch
+    file: cf-pipelines/logsearch/tasks/delete/task.yml
+    params:
+      BBL_ENV: ((bbl_env))
