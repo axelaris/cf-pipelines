@@ -3,7 +3,6 @@
 pushd bbl-state/${BBL_ENV}/state
 set +x
 eval "$(bbl print-env)"
-set -x
 popd
 
 FROM="/bosh-${BBL_ENV}/cf"
