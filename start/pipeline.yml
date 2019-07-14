@@ -60,11 +60,27 @@ jobs:
         - bbl-state/((env_name))/vars/cf/ci-vars.yml
         unpaused: true
 
-- name: mysql
+- name: logsearch
   plan:
   - get: bbl-state
   - get: cf-pipelines
     passed: [cf]
+    trigger: true
+  - put: ci
+    params:
+      pipelines:
+      - name: logsearch
+        team: main
+        config_file: cf-pipelines/logsearch/pipeline.yml
+        vars_files:
+        - bbl-state/((env_name))/vars/logsearch/ci-vars.yml
+        unpaused: true
+
+- name: mysql
+  plan:
+  - get: bbl-state
+  - get: cf-pipelines
+    passed: [logsearch]
     trigger: true
   - put: ci
     params:
