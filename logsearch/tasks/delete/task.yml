@@ -9,6 +9,7 @@ image_resource:
 
 inputs:
 - name: bbl-state             # - The repo containing the Director's bbl state dir
+- name: cf-pipelines          # - Pipelines repo
 
 run:
   path: cf-pipelines/logsearch/tasks/delete/task.sh
