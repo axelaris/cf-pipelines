@@ -9,7 +9,6 @@ image_resource:
 
 inputs:
 - name: bbl-state             # - The repo containing the Director's bbl state dir
-- name: logsearch-boshrelease # - This repo
 
 run:
   path: cf-pipelines/logsearch/tasks/delete/task.sh
