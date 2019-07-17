@@ -16,10 +16,6 @@ run:
   path: cf-pipelines/logsearch/tasks/deploy/task.sh
 
 params:
-  SYSTEM_DOMAIN:
-  # - Required
-  # - CF system base domain e.g. `my-cf.com`
-
   OPS_FILES:
   # - Optional
   # - List of operations files to be applied to the manifest
