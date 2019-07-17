@@ -57,6 +57,7 @@ jobs:
   - get: version
     passed:
     - populate-credhub
+    trigger: true
   - get: logsearch-boshrelease
   - get: cf-pipelines
   - get: bbl-state
@@ -112,9 +113,6 @@ jobs:
   plan:
   - get: cf-pipelines
   - get: bbl-state
-  - get: version
-    passed:
-    - deploy-logsearch
   - task: delete-logsearch
     file: cf-pipelines/logsearch/tasks/delete/task.yml
     params:
