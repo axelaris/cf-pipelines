@@ -17,5 +17,4 @@ run:
   path: cf-pipelines/mysql/tasks/bosh-deploy/task.sh
 
 params:
-  OPS_FILES: 
   BBL_ENV:
