@@ -7,6 +7,7 @@ popd
 set -x
 
 arguments="-l bbl-state/${BBL_ENV}/vars/logsearch/bosh-vars.yml"
+OPS_FILES=$(cat bbl-state/${BBL_ENV}/vars/logsearch/ops-files | grep -v ^#)
 for op in ${OPS_FILES}
 do
   arguments="${arguments} -o logsearch-boshrelease/deployment/${op}"
