@@ -13,6 +13,7 @@ resources:
   source:
     uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
     branch: develop
+    tag_filter: ((logsearch_version))
 
 - name: cf-pipelines
   type: git
