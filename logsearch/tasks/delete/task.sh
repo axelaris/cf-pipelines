@@ -7,9 +7,14 @@ set -x
 popd
 
 SUFFIX="/bosh-${BBL_ENV}/logsearch"
-credhub delete -n ${SUFFIX}/cf_admin_password
-credhub delete -n ${SUFFIX}/uaa_admin_client_secret 
-credhub delete -n ${SUFFIX}/cf-kibana_client_secret 
-credhub delete -n ${SUFFIX}/system_domain 
+for KEY in \
+  cf_admin_password \
+  uaa_admin_client_secret \
+  cf-kibana_client_secret \
+  kibana_oauth2_client_secret \
+  system_domain;
+  do
+  credhub delete -n ${SUFFIX}/${KEY}
+done
 
 bosh -n -d logsearch delete-deployment
