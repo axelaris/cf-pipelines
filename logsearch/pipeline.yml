@@ -34,7 +34,6 @@ groups:
   - populate-credhub
   - deploy-logsearch
   - smoke-tests
-  - create-uaa-client
   - upload-kibana-objects
 - name: destroy
   jobs:
@@ -66,7 +65,7 @@ jobs:
     file: cf-pipelines/logsearch/tasks/deploy/task.yml
     params:
       BBL_ENV: ((bbl_env))
-      
+
 - name: smoke-tests
   plan:
   - get: cf-pipelines
@@ -81,27 +80,13 @@ jobs:
       BBL_ENV: ((bbl_env))
       ERRAND_NAME: smoke-tests
 
-- name: create-uaa-client
-  plan:
-  - get: cf-pipelines
-  - get: bbl-state
-  - get: version
-    passed:
-    - smoke-tests
-    trigger: false
-  - task: create-uaa-client
-    file: cf-pipelines/logsearch/tasks/run-errand/task.yml
-    params:
-      BBL_ENV: ((bbl_env))
-      ERRAND_NAME: create-uaa-client
-
 - name: upload-kibana-objects
   plan:
   - get: cf-pipelines
   - get: bbl-state
   - get: version
     passed:
-    - create-uaa-client
+    - smoke-tests
     trigger: false
   - task: upload-kibana-objects
     file: cf-pipelines/logsearch/tasks/run-errand/task.yml
