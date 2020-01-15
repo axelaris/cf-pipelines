@@ -13,6 +13,13 @@ resources:
     branch: master
     tag_filer: ((prometheus_version))
 
+- name: logsearch-boshrelease
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-community/logsearch-boshrelease.git
+    branch: develop
+    #tag_filter: ((logsearch_version))
+
 - name: cf-deployment-concourse-tasks
   type: git
   source:
@@ -42,7 +49,9 @@ jobs:
   - get: cf-deployment-concourse-tasks
   - get: bbl-state
   - get: prometheus-boshrelease
-  - task: collect-ops-files
+  - get: logsearch-boshrelease
+
+  - task: collect-prometheus-ops-files
     file: cf-deployment-concourse-tasks/collect-ops-files/task.yml
     input_mapping:
       base-ops-files: cf-deployment
@@ -50,6 +59,16 @@ jobs:
     params:
       BASE_OPS_FILE_DIR: operations
       NEW_OPS_FILES: ((prometheus_ops_files))
+
+  - task: collect-logsearch-ops-files
+    file: cf-deployment-concourse-tasks/collect-ops-files/task.yml
+    input_mapping:
+      base-ops-files: collected-ops-files
+      new-ops-files: logsearch-boshrelease
+    params:
+      BASE_OPS_FILE_DIR: operations
+      NEW_OPS_FILES: ((logsearch_ops_files))
+
   - task: deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     input_mapping:
