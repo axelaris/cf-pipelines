@@ -12,6 +12,7 @@ for KEY in \
   uaa_admin_client_secret \
   cf-kibana_client_secret \
   kibana_oauth2_client_secret \
+  uaa_clients_firehose_to_syslog_secret \
   system_domain;
   do
   credhub delete -n ${SUFFIX}/${KEY}
