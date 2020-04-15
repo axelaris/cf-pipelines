@@ -63,10 +63,9 @@ jobs:
   - task: deploy-mysql
     file: cf-pipelines/mysql/tasks/bosh-deploy/task.yml
     params:
-      OPS_FILES: ((ops_files))
       BBL_ENV: ((bbl_env))
   - put: version
-     
+
 - name: broker-registrar
   plan:
   - get: version

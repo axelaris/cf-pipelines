@@ -6,7 +6,7 @@ eval "$(bbl print-env)"
 set -x
 popd
 arguments="-l bbl-state/${BBL_ENV}/vars/mysql/bosh-vars.yml"
-OPS_FILES=$(cat bbl-state/${BBL_ENV}/vars/mysql/ops-files)
+OPS_FILES=$(cat bbl-state/${BBL_ENV}/vars/mysql/ops-files | grep -v ^#)
 for op in ${OPS_FILES}
 do
 arguments="${arguments} -o cf-mysql-deployment/operations/${op}"
