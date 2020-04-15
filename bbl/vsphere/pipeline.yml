@@ -2,7 +2,7 @@ resources:
 - name: cf-deployment-concourse-tasks
   type: git
   source:
-    uri: https://github.com/alexw19/cf-deployment-concourse-tasks.git
+    uri: https://github.com/axelaris/cf-deployment-concourse-tasks.git
     branch: master
 
 - name: bbl-state
@@ -86,4 +86,3 @@ jobs:
     params:
       repository: updated-bbl-state
       rebase: true
-
