@@ -109,8 +109,12 @@ The main purpose of Controlplane is to handle Concourse deployment. Here is a wa
 
   [AWS] [[bug]](https://github.com/cloudfoundry/bosh-bootloader/pull/474) Please add 4443 port to `cf-router-lb-security-group`. 
 
+Before setting all the rest CredHub values - make sure you've connected to appropriate environment, but not `controlplane` one
 ### cf
-Before setting CredHub values for CF - make sure you've connected to `nonprod-1` env, not `controlplane`
 
 - `/bosh-nonprod-1/cf/router_ssl` - SSL Certificate
+
+### logsearch
+
+- `/bosh-nonprod-1/logsearch/haproxy-ssl` - SSL Certificate
 
