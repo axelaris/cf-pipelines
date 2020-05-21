@@ -1,0 +1,213 @@
+resource_types:
+- name: pivnet
+  type: docker-image
+  source:
+    repository: pivotalcf/pivnet-resource
+    tag: latest-final
+
+resources:
+- name: pivnet
+  type: pivnet
+  source:
+    product_slug: platform-automation
+    api_token: ((pivnet-token))
+
+- name: config
+  type: git
+  source:
+    uri: ((pipeline-repo))
+    private_key: ((deploy-key.private_key))
+    branch: master
+
+- name: pa-image
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: platform-automation
+    regexp: platform-automation-image-(.*).tgz
+
+- name: pa-tasks
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: platform-automation
+    regexp: platform-automation-tasks-(.*).zip
+
+- name: ops-manager
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: ops-manager-vsphere-(.*).ova
+
+- name: pas
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: cf-(.*).pivotal
+
+- name: pas-stemcell
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: pas-stemcell/bosh-stemcell-(.*)-vsphere(.*)\.tgz
+
+- name: logsearch
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: logsearch-(.*).pivotal
+
+- name: logsearch-stemcell
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: elk-stemcell/bosh-stemcell-(.*)-vsphere(.*)\.tgz
+
+jobs:
+- name: platform-automation
+  serial: true
+  plan:
+  - get: pivnet
+    trigger: true
+  - in_parallel:
+    - put: pa-tasks
+      params:
+        file: pivnet/*tasks*.zip
+    - put: pa-image
+      params:
+        file: pivnet/*image*.tgz
+
+- name: opsman
+  plan:
+  - in_parallel:
+    - get: pa-image
+      passed:
+      - platform-automation
+      params:
+        globs: ["*image*.tgz"]
+        unpack: true
+    - get: pa-tasks
+      passed:
+      - platform-automation
+      params:
+        globs: ["*tasks*.zip"]
+        unpack: true
+    - get: config
+  - task: credhub-interpolate
+    image: pa-image
+    file: pa-tasks/tasks/credhub-interpolate.yml
+    params: ((credhub-params))
+    input_mapping:
+      files: config
+      platform-automation-tasks: pa-tasks
+    output_mapping:
+  - task: download-ops-manager
+    image: pa-image
+    file: pa-tasks/tasks/download-product.yml
+    params:
+      CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/download-ops-manager.yml
+    input_mapping:
+      config: interpolated-files
+      platform-automation-tasks: pa-tasks
+  - put: ops-manager
+    params:
+      file: downloaded-product/ops-manager-vsphere*.ova
+
+- name: pas
+  plan:
+  - in_parallel:
+    - get: pa-image
+      passed:
+      - platform-automation
+      params:
+        globs: ["*image*.tgz"]
+        unpack: true
+    - get: pa-tasks
+      passed:
+      - platform-automation
+      params:
+        globs: ["*tasks*.zip"]
+        unpack: true
+    - get: config
+  - task: credhub-interpolate
+    image: pa-image
+    file: pa-tasks/tasks/credhub-interpolate.yml
+    params: ((credhub-params))
+    input_mapping:
+      files: config
+      platform-automation-tasks: pa-tasks
+    output_mapping:
+  - task: download-pas
+    image: pa-image
+    file: pa-tasks/tasks/download-product.yml
+    params:
+      CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/download-pas.yml
+    input_mapping:
+      config: interpolated-files
+      platform-automation-tasks: pa-tasks
+  - in_parallel:
+    - put: pas
+      params:
+        file: downloaded-product/cf-*.pivotal
+    - put: pas-stemcell
+      params:
+        file: downloaded-stemcell/bosh-stemcell-*-vsphere*.tgz
+
+- name: logsearch
+  plan:
+  - in_parallel:
+    - get: pa-image
+      passed:
+      - platform-automation
+      params:
+        globs: ["*image*.tgz"]
+        unpack: true
+    - get: pa-tasks
+      passed:
+      - platform-automation
+      params:
+        globs: ["*tasks*.zip"]
+        unpack: true
+    - get: config
+  - task: credhub-interpolate
+    image: pa-image
+    file: pa-tasks/tasks/credhub-interpolate.yml
+    params: ((credhub-params))
+    input_mapping:
+      files: config
+      platform-automation-tasks: pa-tasks
+    output_mapping:
+  - task: download-logsearch
+    image: pa-image
+    file: pa-tasks/tasks/download-product.yml
+    params:
+      CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/download-logsearch.yml
+    input_mapping:
+      config: interpolated-files
+      platform-automation-tasks: pa-tasks
+  - in_parallel:
+    - put: logsearch
+      params:
+        file: downloaded-product/logsearch-*.pivotal
+    - put: logsearch-stemcell
+      params:
+        file: downloaded-stemcell/bosh-stemcell-*-vsphere*.tgz

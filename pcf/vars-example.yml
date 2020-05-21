@@ -1,0 +1,15 @@
+pipeline-repo: git@github.com:axelaris/dc-example.git
+s3_endpoint: https://s3.example.com
+credhub-params:
+  CREDHUB_CLIENT: ((credhub-client))
+  CREDHUB_SECRET: ((credhub-secret))
+  CREDHUB_SERVER: https://10.20.30.40:8844
+  CREDHUB_CA_CERT: ((credhub-ca))
+  PREFIX: /concourse/pcf
+  INTERPOLATION_PATHS: pcf-nonprod
+commit-params:
+  FILE_SOURCE_PATH: opsman-state.yml
+  FILE_DESTINATION_PATH: pcf-nonprod/state.yml
+  GIT_AUTHOR_EMAIL: "john.smit@example.com"
+  GIT_AUTHOR_NAME: "Platform Automation Toolkit Bot"
+  COMMIT_MESSAGE: 'Update state file'

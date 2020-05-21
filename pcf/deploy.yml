@@ -1,0 +1,397 @@
+---
+resources:
+- name: config
+  type: git
+  source:
+    uri: ((pipeline-repo))
+    private_key: ((deploy-key.private_key))
+    branch: master
+
+- name: pa-image
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: platform-automation
+    regexp: platform-automation-image-(.*).tgz
+
+- name: pa-tasks
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: platform-automation
+    regexp: platform-automation-tasks-(.*).zip
+
+- name: ops-manager
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: ops-manager-vsphere-(.*).ova
+
+- name: pas
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: cf-(.*).pivotal
+
+- name: pas-stemcell
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: pas-stemcell/bosh-stemcell-(.*)-vsphere(.*)\.tgz
+
+- name: logsearch
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: logsearch-(.*).pivotal
+
+- name: logsearch-stemcell
+  type: s3
+  source:
+    endpoint: ((s3_endpoint))
+    access_key_id: ((s3_access_key_id))
+    secret_access_key: ((s3_secret_access_key))
+    bucket: products
+    regexp: elk-stemcell/bosh-stemcell-(.*)-vsphere(.*)\.tgz
+
+
+- name: backup
+  type: s3
+  source:
+    access_key_id: ((s3_access_key_id))
+    bucket: ((backup_bucket))
+    endpoint: ((s3_endpoint))
+    secret_access_key: ((s3_secret_access_key))
+    regexp:  pcf-deployment-(.*).zip
+
+credhub-interpolate: &interpolate-creds
+  image: pa-image
+  file: pa-tasks/tasks/credhub-interpolate.yml
+  params: ((credhub-params))
+  input_mapping:
+    platform-automation-tasks: pa-tasks
+    files: config
+  output_mapping:
+    interpolated-files: interpolated-config
+
+groups:
+- name: create
+  jobs:
+  - ops-manager
+  - stage
+  - configure
+  - apply
+- name: destroy
+  jobs:
+  - undeploy
+  - delete-vm
+
+jobs:
+- name: ops-manager
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pa-image
+      params:
+        unpack: true
+    - get: pa-tasks
+      params:
+        unpack: true
+    - get: config
+  - get: ops-manager
+    params:
+  - task: credhub-interpolate
+    <<: *interpolate-creds
+  - task: create-vm
+    image: pa-image
+    file: pa-tasks/tasks/create-vm.yml
+    input_mapping:
+      config: interpolated-config
+      state: config
+      image: ops-manager
+      platform-automation-tasks: pa-tasks
+    params:
+      OPSMAN_CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/opsman.yml
+      STATE_FILE: ((credhub-params.INTERPOLATION_PATHS))/opsman-state.yml
+    ensure: &make-commit
+      do:
+      - task: make-commit
+        image: pa-image
+        file: pa-tasks/tasks/make-git-commit.yml
+        input_mapping:
+          platform-automation-tasks: pa-tasks
+          repository: config
+          file-source: generated-state
+        output_mapping:
+          repository-commit: config-commit
+        params: ((commit-params))
+      - put: config
+        params:
+          repository: config-commit
+          file: generated-state/((credhub-params.INTERPOLATION_PATHS))/opsman-state.yml
+          merge: true
+  - task: configure-auth
+    image: pa-image
+    file: pa-tasks/tasks/configure-authentication.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      config: interpolated-config
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      AUTH_CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/opsman-auth.yml
+  - task: configure-ssl
+    image: pa-image
+    file: config/((credhub-params.INTERPOLATION_PATHS))/opsman-ssl.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+    params:
+      ENV: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      CERT: ((ops-cert.certificate))
+      KEY: ((ops-cert.private_key))
+  - task: stage-director
+    image: pa-image
+    file: pa-tasks/tasks/staged-director-config.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+  - task: configure-director
+    image: pa-image
+    file: pa-tasks/tasks/configure-director.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      DIRECTOR_CONFIG_FILE: director.yml
+      VARS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/director-vars.yml
+      OPS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/director-ops.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      config: generated-config
+      env: interpolated-config
+  - task: apply-director-changes
+    image: pa-image
+    file: pa-tasks/tasks/apply-director-changes.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+  - task: export-installation
+    image: pa-image
+    file: pa-tasks/tasks/export-installation.yml
+    params:
+      INSTALLATION_FILE: pcf-deployment-$timestamp.zip
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+  - put: backup
+    params:
+      file: installation/pcf-deployment*.zip
+
+- name: stage
+  serial: true
+  plan:
+  - in_parallel:
+      - get: pa-image
+        params:
+          unpack: true
+      - get: pa-tasks
+        params:
+          unpack: true
+      - get: config
+        passed: [ "ops-manager" ]
+        trigger: true
+      - get: pas
+      - get: pas-stemcell
+      - get: logsearch
+      - get: logsearch-stemcell
+  - task: interpolate-creds
+    <<: *interpolate-creds
+  - task: upload-product-pas
+    image: pa-image
+    file: pa-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      product: pas
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+  - task: upload-pas-stemcell
+    image: pa-image
+    file: pa-tasks/tasks/upload-stemcell.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      stemcell: pas-stemcell
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+  - task: upload-product-logsearch
+    image: pa-image
+    file: pa-tasks/tasks/upload-and-stage-product.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      product: logsearch
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+  - task: upload-logsearch-stemcell
+    image: pa-image
+    file: pa-tasks/tasks/upload-stemcell.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      stemcell: logsearch-stemcell
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+
+- name: configure
+  serial: true
+  plan:
+  - in_parallel:
+      - get: pa-image
+        params:
+          unpack: true
+      - get: pa-tasks
+        params:
+          unpack: true
+      - get: config
+        passed: [ "stage" ]
+        trigger: true
+  - task: interpolate-creds
+    <<: *interpolate-creds
+  - task: stage-pas
+    image: pa-image
+    file: pa-tasks/tasks/staged-config.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      PRODUCT_NAME: cf
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+  - task: configure-pas
+    image: pa-image
+    file: pa-tasks/tasks/configure-product.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      CONFIG_FILE: cf.yml
+      VARS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/pas-vars.yml
+      OPS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/pas-ops.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      config: generated-config
+      vars: interpolated-config
+  - task: stage-logsearch
+    image: pa-image
+    file: pa-tasks/tasks/staged-config.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      PRODUCT_NAME: logsearch
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+  - task: configure-logsearch
+    image: pa-image
+    file: pa-tasks/tasks/configure-product.yml
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+      CONFIG_FILE: logsearch.yml
+      VARS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/logsearch-vars.yml
+      OPS_FILES: env/((credhub-params.INTERPOLATION_PATHS))/logsearch-ops.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+      config: generated-config
+      vars: interpolated-config
+
+- name: apply
+  serial: true
+  plan:
+  - in_parallel:
+      - get: pa-image
+        params:
+          unpack: true
+      - get: pa-tasks
+        params:
+          unpack: true
+      - get: config
+        passed: [ "configure" ]
+        trigger: true
+  - task: interpolate-creds
+    <<: *interpolate-creds
+  - task: apply-product-changes
+    image: pa-image
+    file: pa-tasks/tasks/apply-changes.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
+
+- name: undeploy
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pa-image
+      params:
+        unpack: true
+    - get: pa-tasks
+      params:
+        unpack: true
+    - get: config
+      passed: ["configure"]
+      trigger: false
+  - task: interpolate-creds
+    <<: *interpolate-creds
+  - task: delete-installation
+    image: pa-image
+    file: pa-tasks/tasks/delete-installation.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      env: interpolated-config
+
+- name: delete-vm
+  serial: true
+  plan:
+  - in_parallel:
+    - get: pa-image
+      params:
+        unpack: true
+    - get: pa-tasks
+      params:
+        unpack: true
+    - get: config
+      passed: ["undeploy"]
+      trigger: false
+  - task: interpolate-creds
+    <<: *interpolate-creds
+  - task: delete-vm
+    image: pa-image
+    file: pa-tasks/tasks/delete-vm.yml
+    params:
+      OPSMAN_CONFIG_FILE: opsman.yml
+      STATE_FILE: opsman-state.yml
+    input_mapping:
+      platform-automation-tasks: pa-tasks
+      config: interpolated-config
+      state: config
+    ensure: *make-commit
