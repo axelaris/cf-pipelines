@@ -390,8 +390,8 @@ jobs:
     image: pa-image
     file: pa-tasks/tasks/delete-vm.yml
     params:
-      OPSMAN_CONFIG_FILE: opsman.yml
-      STATE_FILE: opsman-state.yml
+      OPSMAN_CONFIG_FILE: ((credhub-params.INTERPOLATION_PATHS))/opsman.yml
+      STATE_FILE: ((credhub-params.INTERPOLATION_PATHS))/opsman-state.yml
     input_mapping:
       platform-automation-tasks: pa-tasks
       config: interpolated-config
