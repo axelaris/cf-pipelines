@@ -368,6 +368,8 @@ jobs:
     input_mapping:
       platform-automation-tasks: pa-tasks
       env: interpolated-config
+    params:
+      ENV_FILE: ((credhub-params.INTERPOLATION_PATHS))/env.yml
 
 - name: delete-vm
   serial: true
